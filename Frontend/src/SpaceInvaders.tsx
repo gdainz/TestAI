@@ -29,6 +29,7 @@ interface GameState {
   aliens: Alien[];
   alienDirection: number; // 1 for right, -1 for left
   score: number;
+  level: number;
   gameOver: boolean;
   gameWon: boolean;
   lastAlienMoveTime: number;
@@ -46,6 +47,7 @@ const SpaceInvaders: React.FC = () => {
     aliens: [],
     alienDirection: 1,
     score: 0,
+    level: 1,
     gameOver: false,
     gameWon: false,
     lastAlienMoveTime: 0,
@@ -74,6 +76,7 @@ const SpaceInvaders: React.FC = () => {
       aliens,
       alienDirection: 1,
       score: 0,
+      level: 1,
       gameOver: false,
       gameWon: false,
       lastAlienMoveTime: 0,
@@ -211,9 +214,25 @@ const SpaceInvaders: React.FC = () => {
       // Cleanup inactive bullets
       state.bullets = state.bullets.filter(b => b.active);
 
-      // Check Win
+      // Check Win -> Next Level
       if (state.aliens.every(a => !a.active)) {
-          state.gameWon = true;
+          // Respawn Aliens
+          const newAliens: Alien[] = [];
+          for (let r = 0; r < ALIEN_ROWS; r++) {
+            for (let c = 0; c < ALIEN_COLS; c++) {
+              newAliens.push({
+                x: ALIEN_OFFSET_X + c * (ALIEN_WIDTH + ALIEN_PADDING),
+                y: ALIEN_OFFSET_Y + r * (ALIEN_HEIGHT + ALIEN_PADDING),
+                active: true,
+              });
+            }
+          }
+          state.aliens = newAliens;
+          state.level += 1;
+          state.bullets = [];
+          state.alienDirection = 1;
+          // Increase difficulty
+          state.alienMoveInterval = Math.max(100, 600 - ((state.level - 1) * 50));
       }
     }
 
@@ -260,6 +279,7 @@ const SpaceInvaders: React.FC = () => {
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '20px "Press Start 2P", sans-serif'; // Fallback to sans-serif
     ctx.fillText(`SCORE: ${gameState.current.score}`, 20, 30);
+    ctx.fillText(`LEVEL: ${gameState.current.level}`, CANVAS_WIDTH - 150, 30);
 
     // Game Over / Win Screen
     if (gameState.current.gameOver) {
