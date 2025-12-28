@@ -17,6 +17,8 @@ const ALIEN_PADDING = 15;
 const ALIEN_OFFSET_X = 50;
 const ALIEN_OFFSET_Y = 50;
 const ALIEN_DROP_HEIGHT = 20;
+const INITIAL_ALIEN_SPEED = 600;
+const SPEED_DECREMENT_PER_LEVEL = 50;
 
 // --- Types ---
 type Position = { x: number; y: number };
@@ -31,7 +33,6 @@ interface GameState {
   score: number;
   level: number;
   gameOver: boolean;
-  gameWon: boolean;
   lastAlienMoveTime: number;
   alienMoveInterval: number;
 }
@@ -49,9 +50,8 @@ const SpaceInvaders: React.FC = () => {
     score: 0,
     level: 1,
     gameOver: false,
-    gameWon: false,
     lastAlienMoveTime: 0,
-    alienMoveInterval: 800, // ms per step (decreases as they speed up)
+    alienMoveInterval: INITIAL_ALIEN_SPEED, // ms per step (decreases as they speed up)
   });
 
   // Input state
@@ -78,9 +78,8 @@ const SpaceInvaders: React.FC = () => {
       score: 0,
       level: 1,
       gameOver: false,
-      gameWon: false,
       lastAlienMoveTime: 0,
-      alienMoveInterval: 600,
+      alienMoveInterval: INITIAL_ALIEN_SPEED,
     };
   };
 
@@ -91,7 +90,7 @@ const SpaceInvaders: React.FC = () => {
       keys.current[e.code] = true;
       
       // Fire bullet on Space
-      if (e.code === 'Space' && !gameState.current.gameOver && !gameState.current.gameWon) {
+      if (e.code === 'Space' && !gameState.current.gameOver) {
         // Limit player bullets (optional simple cooldown by checking existing count or time)
         const activePlayerBullets = gameState.current.bullets.filter(b => b.active && b.fromPlayer).length;
         if (activePlayerBullets < 3) {
@@ -105,7 +104,7 @@ const SpaceInvaders: React.FC = () => {
       }
 
       // Restart
-      if (e.code === 'Enter' && (gameState.current.gameOver || gameState.current.gameWon)) {
+      if (e.code === 'Enter' && (gameState.current.gameOver)) {
         initGame();
       }
     };
@@ -129,7 +128,7 @@ const SpaceInvaders: React.FC = () => {
 
   const update = (time: number) => {
     const state = gameState.current;
-    if (!state.gameOver && !state.gameWon) {
+    if (!state.gameOver) {
       // 1. Player Movement
       if (keys.current['ArrowLeft']) state.playerX = Math.max(0, state.playerX - PLAYER_SPEED);
       if (keys.current['ArrowRight']) state.playerX = Math.min(CANVAS_WIDTH - PLAYER_WIDTH, state.playerX + PLAYER_SPEED);
@@ -232,7 +231,7 @@ const SpaceInvaders: React.FC = () => {
           state.bullets = [];
           state.alienDirection = 1;
           // Increase difficulty
-          state.alienMoveInterval = Math.max(100, 600 - ((state.level - 1) * 50));
+          state.alienMoveInterval = Math.max(100, INITIAL_ALIEN_SPEED - ((state.level - 1) * SPEED_DECREMENT_PER_LEVEL));
       }
     }
 
@@ -287,15 +286,6 @@ const SpaceInvaders: React.FC = () => {
         ctx.font = '50px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-        ctx.font = '20px sans-serif';
-        ctx.fillStyle = 'white';
-        ctx.fillText('Press ENTER to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
-        ctx.textAlign = 'left';
-    } else if (gameState.current.gameWon) {
-        ctx.fillStyle = 'green';
-        ctx.font = '50px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('YOU WIN!', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
         ctx.font = '20px sans-serif';
         ctx.fillStyle = 'white';
         ctx.fillText('Press ENTER to Restart', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
